@@ -1,0 +1,52 @@
+name: "Alex's Software Factory- Plan"
+description: Plan a change
+
+inputs:
+  github-token:
+    description: GitHub token used to write the plan to the issue
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+    - name: Install python
+      working-directory: ./factory
+      shell: bash
+      run: uv python install
+    - name: Fetch GitHub OIDC token
+      shell: bash
+      run: |
+        token=$(curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" \
+          | jq -er .value)
+        printf '::add-mask::%s\n' "$token"
+        printf 'token=%s\n' "$token" >> "$GITHUB_OUTPUT"
+    - name: Prepare prompt
+      shell: bash
+      env:
+        ISSUE_TITLE: ${{ github.event.issue.title }}
+        ISSUE_BODY: ${{ github.event.issue.body }}
+      run: |
+        printf 'Title: %s\n\n%s\n' "$ISSUE_TITLE" "$ISSUE_BODY" > task.md
+    - name: Run Claude
+      shell: bash
+      run: |
+        PYTHONPATH="$PWD/factory" \
+          uv run \
+          --project factory python -m software_factory.main \
+          --mode plan < task.md
+    - name: Post review
+        env:
+          GH_TOKEN: ${{ inputs.github-token }}
+        run: |
+          {
+            echo "## Proposed plan"
+            echo
+            cat factory/outputs/output.md
+            echo
+            echo "---"
+            echo "Comment \`/approve\` to send this plan to the execution station."
+          } > comment.md
+          gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body-file comment.md
