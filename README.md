@@ -13,5 +13,4 @@
   with:
     github-token: ${{ ??? }} # GitHub token that can be used to write a comment on an existing issue
     anthropic-token: ${{ ??? }} # JWT from GitHub Actions OIDC (https://platform.claude.com/docs/en/manage-claude/wif-reference#environment-variables)
-    prompt-path: /path/to/prompt.md # Absolute path to a file containing the prompt
 ```
