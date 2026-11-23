@@ -28,7 +28,7 @@ runs:
     # If several match, use the most recently posted one.
     - name: Fetch the approved plan
       env:
-        GH_TOKEN: ${{ inputs-github-token }}
+        GH_TOKEN: ${{ inputs.github-token }}
         APP_CLIENT_ID: ${{ inputs.github-app-client-id }}
       run: |
         if ! gh api --paginate --slurp "repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" \
@@ -61,7 +61,7 @@ runs:
     - name: Open a pull request
       shell: bash
       env:
-        GH_TOKEN: ${{ inputs-github-token }}
+        GH_TOKEN: ${{ inputs.github-token }}
         ISSUE_TITLE: ${{ github.event.issue.title }}
       run: |
         N="${{ github.event.issue.number }}"
