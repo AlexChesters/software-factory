@@ -33,7 +33,7 @@ runs:
         ANTHROPIC_IDENTITY_TOKEN: ${{ inputs.anthropic-token }}
       run: |
         cd "$GITHUB_ACTION_PATH/../../factory"
-        uv run python -m software_factory.main --mode plan < task.md
+        uv run python -m software_factory.main --mode plan --repo-dir "$GITHUB_WORKSPACE" < task.md
     - name: Post review
       shell: bash
       env:
