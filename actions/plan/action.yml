@@ -43,16 +43,16 @@ runs:
           --project factory python -m software_factory.main \
           --mode plan < task.md
     - name: Post review
-        env:
-          GH_TOKEN: ${{ inputs.github-token }}
-        run: |
-          cd "$GITHUB_ACTION_PATH/../../factory"
-          {
-            echo "## Proposed plan"
-            echo
-            cat factory/outputs/output.md
-            echo
-            echo "---"
-            echo "Comment \`/approve\` to send this plan to the execution station."
-          } > comment.md
-          gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body-file comment.md
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        {
+          echo "## Proposed plan"
+          echo
+          cat factory/outputs/output.md
+          echo
+          echo "---"
+          echo "Comment \`/approve\` to send this plan to the execution station."
+        } > comment.md
+        gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body-file comment.md
