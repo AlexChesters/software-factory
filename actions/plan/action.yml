@@ -38,10 +38,7 @@ runs:
         ANTHROPIC_IDENTITY_TOKEN: ${{ steps.oidc.outputs.token }}
       run: |
         cd "$GITHUB_ACTION_PATH/../../factory"
-        PYTHONPATH="$PWD/factory" \
-          uv run \
-          --project factory python -m software_factory.main \
-          --mode plan < task.md
+        uv run python -m software_factory.main --mode plan < task.md
     - name: Post review
       shell: bash
       env:
@@ -51,7 +48,7 @@ runs:
         {
           echo "## Proposed plan"
           echo
-          cat factory/outputs/output.md
+          cat outputs/output.md
           echo
           echo "---"
           echo "Comment \`/approve\` to send this plan to the execution station."
