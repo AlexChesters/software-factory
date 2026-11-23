@@ -27,6 +27,7 @@ runs:
     # Find comments with the plan heading from the configured Factory App.
     # If several match, use the most recently posted one.
     - name: Fetch the approved plan
+      shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
         APP_CLIENT_ID: ${{ inputs.github-app-client-id }}
