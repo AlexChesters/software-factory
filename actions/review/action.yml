@@ -1,0 +1,45 @@
+name: "Alex's Software Factory- Review"
+description: Review a change
+
+inputs:
+  github-token:
+    description: GitHub token used to read the plan and create a pull request
+    required: true
+  anthropic-token:
+    description: Anthropic identity token obtained from WIF, used to call the Claude API
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+    - name: Install python
+      shell: bash
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        uv python install
+    - name: Prepare review inputs
+      shell: bash
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        git diff --no-ext-diff --no-textconv "${{ github.event.pull_request.base.sha }}...HEAD" > "pr.diff"
+        git show "${{ github.event.pull_request.base.sha }}:AGENTS.md" > AGENTS.md
+    - name: Run Claude
+      shell: bash
+      env:
+        ANTHROPIC_IDENTITY_TOKEN: ${{ inputs.anthropic-token }}
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        uv run python -m software_factory.main --mode review --repo-dir "$GITHUB_WORKSPACE" < pr.diff
+    - name: Post review
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        {
+          echo "## Reviewer agent"
+          echo
+          cat "outputs/output.md"
+        } > "comment.md"
+        gh pr comment "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --body-file "comment.md"
