@@ -8,6 +8,9 @@ inputs:
   anthropic-token:
     description: Anthropic identity token obtained from WIF, used to call the Claude API
     required: true
+  prompt-path:
+    description: Absolute path to a file containing the prompt
+    required: true
 
 runs:
   using: composite
@@ -19,21 +22,13 @@ runs:
       run: |
         cd "$GITHUB_ACTION_PATH/../../factory"
         uv python install
-    - name: Prepare prompt
-      shell: bash
-      env:
-        ISSUE_TITLE: ${{ github.event.issue.title }}
-        ISSUE_BODY: ${{ github.event.issue.body }}
-      run: |
-        cd "$GITHUB_ACTION_PATH/../../factory"
-        printf 'Title: %s\n\n%s\n' "$ISSUE_TITLE" "$ISSUE_BODY" > task.md
     - name: Run Claude
       shell: bash
       env:
         ANTHROPIC_IDENTITY_TOKEN: ${{ inputs.anthropic-token }}
       run: |
         cd "$GITHUB_ACTION_PATH/../../factory"
-        uv run python -m software_factory.main --mode plan --repo-dir "$GITHUB_WORKSPACE" < task.md
+        uv run python -m software_factory.main --mode plan --repo-dir "$GITHUB_WORKSPACE" < "${{ inputs.prompt-path }}"
     - name: Post review
       shell: bash
       env:
