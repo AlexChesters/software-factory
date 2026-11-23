@@ -32,6 +32,7 @@ runs:
         GH_TOKEN: ${{ inputs.github-token }}
         APP_CLIENT_ID: ${{ inputs.github-app-client-id }}
       run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
         if ! gh api --paginate --slurp "repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" \
           | jq -er --arg app_client_id "$APP_CLIENT_ID" '
               [.[][]
