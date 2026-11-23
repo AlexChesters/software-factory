@@ -43,6 +43,7 @@ runs:
           --project factory python -m software_factory.main \
           --mode plan < task.md
     - name: Post review
+      shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
       run: |
