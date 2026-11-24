@@ -67,6 +67,9 @@ workflow:
 The factory's access to the TypeSafe AI API is controlled with an API key. Your workflow is responsible for making
 this API key available in the environment variable `TYPESAFE_API_KEY`.
 
+## Examples
+You can see complete examples for each station in the [`examples/`](./examples/) folder.
+
 ## API
 
 ### Plan
