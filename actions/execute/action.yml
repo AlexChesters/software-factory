@@ -22,6 +22,8 @@ runs:
     - name: Determine current user ID
       id: determine-current-user-id
       shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
       run: |
         USER_ID=$(gh api graphql -f query='query { viewer { login databaseId } }' --jq '.data.viewer.databaseId')
         echo "USER_ID=$USER_ID" >> $GITHUB_OUTPUT
