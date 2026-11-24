@@ -27,6 +27,7 @@ runs:
       run: |
         USER_ID=$(gh api graphql -f query='query { viewer { login databaseId } }' --jq '.data.viewer.databaseId')
         echo "USER_ID=$USER_ID" >> $GITHUB_OUTPUT
+        echo "[DEBUG] - USER_ID = $USER_ID"
     # Find comments made by the current user with the expected plan heading.
     # If several match, use the most recently posted one.
     - name: Fetch the approved plan
@@ -35,6 +36,7 @@ runs:
         GH_TOKEN: ${{ inputs.github-token }}
         APP_CLIENT_ID: ${{ steps.determine-current-user-id.outputs.user_id }}
       run: |
+        echo "[DEBUG] - checking $APP_CLIENT_ID"
         cd "$GITHUB_ACTION_PATH/../../factory"
         if ! gh api --paginate --slurp "repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" \
           | jq -er --arg app_client_id "$APP_CLIENT_ID" '
