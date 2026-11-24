@@ -97,4 +97,5 @@ this API key available in the environment variable `TYPESAFE_API_KEY`.
 ```
 
 ## Examples
-You can see complete examples for each station in the [`examples/`](./examples/) folder.
+The factory is used to build and improve the factory itself, so take a look at the [`.github`](.github/) folder
+and this repos issues, pull requests etc to see how the factory can be used.
