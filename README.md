@@ -88,7 +88,7 @@ You can see complete examples for each station in the [`examples/`](./examples/)
 - name: Execute plan
   uses: AlexChesters/software-factory/actions/execute@main
   with:
-    github-token: ${{ ??? }} # Installation token from the App that posted the plan
+    github-token: ${{ ??? }} # GitHub token issued by a GitHub app
 ```
 
 ### Review
