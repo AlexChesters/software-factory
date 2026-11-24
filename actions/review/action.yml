@@ -33,6 +33,7 @@ runs:
         cd "$GITHUB_ACTION_PATH/../../factory"
         uv run python -m software_factory.main --mode review --repo-dir "$GITHUB_WORKSPACE" < pr.diff
     - name: Post review
+      shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
       run: |
