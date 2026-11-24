@@ -5,9 +5,6 @@ inputs:
   github-token:
     description: GitHub token used to write the plan to the issue
     required: true
-  anthropic-token:
-    description: Anthropic identity token obtained from WIF, used to call the Claude API
-    required: true
 
 runs:
   using: composite
