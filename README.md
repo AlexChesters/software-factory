@@ -1,8 +1,10 @@
 # Alex's Software Factory
 
 ## Dependencies
-- Claude Platform API access
-- Typesafe AI API access
+| Dependency    | Used for      |
+| ------------- | ------------- |
+| Cloud Platform API  | Primary LLM for creating plans, executing changes and reviewing changes  |
+| TypeSafe API  | System One model decision for which model is used for the Claude Platform |
 
 ## Usage
 
