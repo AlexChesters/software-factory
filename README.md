@@ -36,7 +36,9 @@ This PR may or may not have been written by the factory.
 The review station will comment on the pull request with its findings, but it will not explicitly approve/request
 changes.
 
-## Permissions
+## Permissions and credentials
+
+### GitHub
 The factory assumes that the GitHub credentials it uses have been issued by a
 [GitHub application](https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/about-creating-github-apps).
 The primary reason for this is for the execution station to assert that the plan it is executing was written
@@ -48,6 +50,22 @@ The application in question needs the following permissions:
 
 You can mint tokens with the minimum permissions required for the task at hand (e.g. the planning station only
 needs write access to issues, not code/pull requests).
+
+### Anthropic
+The factory makes use of Anthropic's
+[Workload Identity Federation](https://platform.claude.com/docs/en/manage-claude/workload-identity-federation).
+As a result, you don't need to create an API key but you do need to create a service account and a federation
+identity rule.
+
+You don't need to explicitly provide these to the action, instead set the following environment variables in your
+workflow:
+- `ANTHROPIC_ORGANIZATION_ID`
+- `ANTHROPIC_SERVICE_ACCOUNT_ID`
+- `ANTHROPIC_FEDERATION_RULE_ID`
+
+# TypeSafeAI
+The factory's access to the TypeSafe AI API is controlled with an API key. Your workflow is responsible for making
+this API key available in the environment variable `TYPESAFE_API_KEY`.
 
 ## API
 
