@@ -27,10 +27,19 @@ runs:
       run: |
         cd "$GITHUB_ACTION_PATH/../../factory"
         printf 'Title: %s\n\n%s\n' "$ISSUE_TITLE" "$ISSUE_BODY" > task.md
+    - name: Mint GitHub OIDC token
+      id: oidc
+      shell: bash
+      run: |
+        token=$(curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" \
+          | jq -er .value)
+        printf '::add-mask::%s\n' "$token"
+        printf 'token=%s\n' "$token" >> "$GITHUB_OUTPUT"
     - name: Run Claude
       shell: bash
       env:
-        ANTHROPIC_IDENTITY_TOKEN: ${{ inputs.anthropic-token }}
+        ANTHROPIC_IDENTITY_TOKEN: ${{ steps.oidc.outputs.token }}
       run: |
         cd "$GITHUB_ACTION_PATH/../../factory"
         uv run python -m software_factory.main --mode plan --repo-dir "$GITHUB_WORKSPACE" < task.md
