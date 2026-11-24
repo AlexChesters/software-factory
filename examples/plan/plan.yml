@@ -1,0 +1,47 @@
+name: "Factory: plan"
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  plan:
+    if: github.event.label.name == 'factory:plan'
+    runs-on: ubuntu-26.04
+    env:
+      ANTHROPIC_FEDERATION_RULE_ID: ${{ secrets.ANTHROPIC_FEDERATION_RULE_ID }}
+      ANTHROPIC_ORGANIZATION_ID: ${{ secrets.ANTHROPIC_ORGANIZATION_ID }}
+      ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ secrets.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+      TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Mint GitHub OIDC token
+        id: oidc
+        shell: bash
+        run: |
+          token=$(curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" \
+            | jq -er .value)
+          printf '::add-mask::%s\n' "$token"
+          printf 'token=%s\n' "$token" >> "$GITHUB_OUTPUT"
+      - name: Mint publishing token
+        id: factory-app
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.SOFTWARE_FACTORY_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SOFTWARE_FACTORY_APP_PRIVATE_KEY }}
+          permission-issues: write
+      - name: Create plan
+        uses: AlexChesters/software-factory/actions/plan@main
+        with:
+          github-token: ${{ steps.factory-app.outputs.token }}
+          anthropic-token: ${{ steps.oidc.outputs.token }}
