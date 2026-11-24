@@ -3,7 +3,7 @@ description: Execute a change
 
 inputs:
   github-token:
-    description: GitHub token used to read the plan and create a pull request
+    description: Installation token from the GitHub App that posted the plan, used to read the plan and create a pull request
     required: true
 
 # TODO: find a way to run tests after changes
@@ -19,29 +19,21 @@ runs:
       run: |
         cd "$GITHUB_ACTION_PATH/../../factory"
         uv python install
-    - name: Determine current user ID
-      id: determine-current-user-id
-      shell: bash
-      env:
-        GH_TOKEN: ${{ inputs.github-token }}
-      run: |
-        USER_ID=$(gh api graphql -f query='query { viewer { login databaseId } }' --jq '.data.viewer.databaseId')
-        echo "USER_ID=$USER_ID" >> $GITHUB_OUTPUT
-        echo "[DEBUG] - USER_ID = $USER_ID"
-    # Find comments made by the current user with the expected plan heading.
-    # If several match, use the most recently posted one.
     - name: Fetch the approved plan
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
-        APP_CLIENT_ID: ${{ steps.determine-current-user-id.outputs.user_id }}
       run: |
-        echo "[DEBUG] - checking $APP_CLIENT_ID"
+        if ! bot_id=$(gh api graphql -f query='query { viewer { databaseId } }' \
+          | jq -er '.data.viewer.databaseId | numbers'); then
+          echo "::error::Could not determine the GitHub App bot ID."
+          exit 1
+        fi
         cd "$GITHUB_ACTION_PATH/../../factory"
         if ! gh api --paginate --slurp "repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" \
-          | jq -er --arg app_client_id "$APP_CLIENT_ID" '
+          | jq -er --argjson bot_id "$bot_id" '
               [.[][]
-                | select(.performed_via_github_app.client_id == $app_client_id)
+                | select(.user.type == "Bot" and .user.id == $bot_id)
                 | select((.body // "") | startswith("## Proposed plan\n"))]
               | max_by(.created_at) | .body
             ' > plan.md; then

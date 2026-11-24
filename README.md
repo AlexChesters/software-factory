@@ -43,8 +43,9 @@ changes.
 ### GitHub
 The factory assumes that the GitHub credentials it uses have been issued by a
 [GitHub application](https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/about-creating-github-apps).
-The primary reason for this is for the execution station to assert that the plan it is executing was written
-by the planning station.
+The Plan and Execute stations require installation tokens minted from the same GitHub App.
+The Execute station uses its token to verify that the same app the Execute station runs as is the same app that
+produced the plan.
 
 The application in question needs the following permissions:
 - Read access to metadata
@@ -87,8 +88,7 @@ You can see complete examples for each station in the [`examples/`](./examples/)
 - name: Execute plan
   uses: AlexChesters/software-factory/actions/execute@main
   with:
-    github-token: ${{ ??? }} # GitHub token issued by a GitHub app
-    github-app-client-id: ${{ ??? }} # Client ID of the GitHub app used to write the plan
+    github-token: ${{ ??? }} # Installation token from the App that posted the plan
 ```
 
 ### Review

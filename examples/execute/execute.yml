@@ -44,4 +44,3 @@ jobs:
         uses: AlexChesters/software-factory/actions/execute@main
         with:
           github-token: ${{ steps.factory-app.outputs.token }}
-          github-app-client-id: ${{ secrets.SOFTWARE_FACTORY_APP_CLIENT_ID }}
