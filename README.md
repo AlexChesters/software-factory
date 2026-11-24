@@ -42,6 +42,13 @@ The factory assumes that the GitHub credentials it uses have been issued by a
 The primary reason for this is for the execution station to assert that the plan it is executing was written
 by the planning station.
 
+The application in question needs the following permissions:
+- Read access to metadata
+- Read and write access to code, issues, and pull requests
+
+You can mint tokens with the minimum permissions required for the task at hand (e.g. the planning station only
+needs write access to issues, not code/pull requests).
+
 ## API
 
 ### Plan
