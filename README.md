@@ -80,7 +80,6 @@ You can see complete examples for each station in the [`examples/`](./examples/)
   uses: AlexChesters/software-factory/actions/plan@main
   with:
     github-token: ${{ ??? }} # GitHub token issued by a GitHub app
-    anthropic-token: ${{ ??? }} # JWT from GitHub Actions OIDC (https://platform.claude.com/docs/en/manage-claude/wif-reference#environment-variables)
 ```
 
 ### Execute
@@ -90,7 +89,6 @@ You can see complete examples for each station in the [`examples/`](./examples/)
   with:
     github-token: ${{ ??? }} # GitHub token issued by a GitHub app
     github-app-client-id: ${{ ??? }} # Client ID of the GitHub app used to write the plan
-    anthropic-token: ${{ ??? }} # JWT from GitHub Actions OIDC (https://platform.claude.com/docs/en/manage-claude/wif-reference#environment-variables)
 ```
 
 ### Review
@@ -99,5 +97,4 @@ You can see complete examples for each station in the [`examples/`](./examples/)
   uses: AlexChesters/software-factory/actions/review@main
   with:
     github-token: ${{ ??? }} # GitHub token issued by a GitHub app
-    anthropic-token: ${{ ??? }} # JWT from GitHub Actions OIDC (https://platform.claude.com/docs/en/manage-claude/wif-reference#environment-variables)
 ```
