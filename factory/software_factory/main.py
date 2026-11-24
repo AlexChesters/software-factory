@@ -30,7 +30,8 @@ async def main(*, mode: str, repo_dir: Path) -> None:
         model=model_choice.model_name,
         effort=model_choice.effort,
         system_prompt={"type": "preset", "preset": "claude_code", "append": prompt},
-        permission_mode="acceptEdits"
+        permission_mode="acceptEdits",
+        max_budget_usd=1
     )
 
     async for message in query(prompt=task, options=options):
