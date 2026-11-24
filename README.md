@@ -78,7 +78,7 @@ Every station accepts the following optional inputs:
 - `model`: the Claude model to use. When set, TypeSafe is not used to choose a model.
 - `effort`: the effort level to use. Optional, and defaults to `medium` when a `model` is set.
 
-An `effort` cannot be specified without a `model`.
+An `effort` cannot be specified without a `model`. Claude validates the model and effort combination.
 
 ### Plan
 ```yaml

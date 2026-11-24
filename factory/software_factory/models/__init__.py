@@ -2,6 +2,8 @@ from typing import NamedTuple
 
 from typesafe_sdk import Choice, TypeSafeClient
 
+DEFAULT_EFFORT = "medium"
+
 COMPLEXITIES = {
     "low": "A well-defined, small/trivial change to existing behaviour.",
     "moderate": "Typical day-to-day software engineering tasks backed with a clear plan.",
@@ -37,4 +39,4 @@ def get_model_choice(*, task: str) -> ModelChoice:
     elif complexity_choice == "high":
         model = "claude-opus-5-5"
 
-    return ModelChoice(model_name=model, effort="medium")
+    return ModelChoice(model_name=model, effort=DEFAULT_EFFORT)
