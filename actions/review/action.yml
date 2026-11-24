@@ -22,7 +22,7 @@ runs:
     - name: Prepare review inputs
       shell: bash
       run: |
-        cd "$GITHUB_ACTION_PATH/../../factory"
+        cd "$GITHUB_WORKSPACE"
         git diff --no-ext-diff --no-textconv "${{ github.event.pull_request.base.sha }}...HEAD" > "pr.diff"
         git show "${{ github.event.pull_request.base.sha }}:AGENTS.md" > AGENTS.md
     - name: Mint GitHub OIDC token
@@ -40,7 +40,7 @@ runs:
         ANTHROPIC_IDENTITY_TOKEN: ${{ steps.oidc.outputs.token }}
       run: |
         cd "$GITHUB_ACTION_PATH/../../factory"
-        uv run python -m software_factory.main --mode review --repo-dir "$GITHUB_WORKSPACE" < pr.diff
+        uv run python -m software_factory.main --mode review --repo-dir "$GITHUB_WORKSPACE" < $GITHUB_WORKSPACE/pr.diff
     - name: Post review
       shell: bash
       env:
