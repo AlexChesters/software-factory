@@ -36,6 +36,12 @@ This PR may or may not have been written by the factory.
 The review station will comment on the pull request with its findings, but it will not explicitly approve/request
 changes.
 
+## Permissions
+The factory assumes that the GitHub credentials it uses have been issued by a
+[GitHub application](https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/about-creating-github-apps).
+The primary reason for this is for the execution station to assert that the plan it is executing was written
+by the planning station.
+
 ## API
 
 ### Plan
