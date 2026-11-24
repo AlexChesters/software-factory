@@ -4,7 +4,7 @@
 | Dependency    | Used for      |
 | ------------- | ------------- |
 | Cloud Platform API  | Primary LLM for creating plans, executing changes and reviewing changes  |
-| TypeSafe API  | System One model decision for which model is used for the Claude Platform |
+| TypeSafe API  | System One model decision for which model is used for the Claude Platform (only used when no model is specified) |
 
 ## Usage
 
@@ -70,7 +70,16 @@ workflow:
 The factory's access to the TypeSafe AI API is controlled with an API key. Your workflow is responsible for making
 this API key available in the environment variable `TYPESAFE_API_KEY`.
 
+The API key is only required when no `model` is given. If you specify a `model`, TypeSafe is not used.
+
 ## API
+
+Every station accepts the following optional inputs:
+- `model`: the Claude model to use. When set, TypeSafe is not used to choose a model.
+- `effort`: the effort level to use. Optional, and defaults to `medium` when a `model` is set.
+
+An `effort` cannot be specified without a `model`; this is rejected. Combinations of model and effort that are not
+valid are reported by the Claude platform.
 
 ### Plan
 ```yaml
@@ -78,6 +87,8 @@ this API key available in the environment variable `TYPESAFE_API_KEY`.
   uses: AlexChesters/software-factory/actions/plan@main
   with:
     github-token: ${{ ??? }} # GitHub token issued by a GitHub app
+    model: claude-sonnet-5-5 # optional, skips TypeSafe model selection
+    effort: medium # optional, requires model, defaults to medium
 ```
 
 ### Execute
@@ -86,6 +97,8 @@ this API key available in the environment variable `TYPESAFE_API_KEY`.
   uses: AlexChesters/software-factory/actions/execute@main
   with:
     github-token: ${{ ??? }} # GitHub token issued by a GitHub app
+    model: claude-sonnet-5-5 # optional, skips TypeSafe model selection
+    effort: medium # optional, requires model, defaults to medium
 ```
 
 ### Review
@@ -94,6 +107,8 @@ this API key available in the environment variable `TYPESAFE_API_KEY`.
   uses: AlexChesters/software-factory/actions/review@main
   with:
     github-token: ${{ ??? }} # GitHub token issued by a GitHub app
+    model: claude-sonnet-5-5 # optional, skips TypeSafe model selection
+    effort: medium # optional, requires model, defaults to medium
 ```
 
 ## Examples

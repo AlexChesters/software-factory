@@ -5,6 +5,14 @@ inputs:
   github-token:
     description: GitHub token used to read the plan and create a pull request
     required: true
+  model:
+    description: Explicit Claude model to use. When set, TypeSafe is not used and no TypeSafe API key is needed.
+    required: false
+    default: ""
+  effort:
+    description: Effort level. Requires model; defaults to medium when a model is set.
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -35,9 +43,14 @@ runs:
       shell: bash
       env:
         ANTHROPIC_IDENTITY_TOKEN: ${{ steps.oidc.outputs.token }}
+        MODEL: ${{ inputs.model }}
+        EFFORT: ${{ inputs.effort }}
       run: |
         cd "$GITHUB_ACTION_PATH/../../factory"
-        uv run python -m software_factory.main --mode review --repo-dir "$GITHUB_WORKSPACE" < $GITHUB_WORKSPACE/pr.diff
+        args=()
+        if [ -n "$MODEL" ]; then args+=(--model "$MODEL"); fi
+        if [ -n "$EFFORT" ]; then args+=(--effort "$EFFORT"); fi
+        uv run python -m software_factory.main --mode review --repo-dir "$GITHUB_WORKSPACE" "${args[@]}" < $GITHUB_WORKSPACE/pr.diff
     - name: Post review
       shell: bash
       env:

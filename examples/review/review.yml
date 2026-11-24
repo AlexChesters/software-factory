@@ -24,6 +24,7 @@ jobs:
       ANTHROPIC_FEDERATION_RULE_ID: ${{ secrets.ANTHROPIC_FEDERATION_RULE_ID }}
       ANTHROPIC_ORGANIZATION_ID: ${{ secrets.ANTHROPIC_ORGANIZATION_ID }}
       ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ secrets.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+      # Only needed when `model` is not set
       TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
     steps:
       - uses: actions/checkout@v7
@@ -41,3 +42,5 @@ jobs:
         uses: AlexChesters/software-factory/actions/review@main
         with:
           github-token: ${{ steps.factory-app.outputs.token }}
+          # model: claude-sonnet-5-5
+          # effort: medium # requires model, defaults to medium
