@@ -106,7 +106,7 @@ Execute and Revise optionally accept `allowed-bash-commands`: one bash command p
 ##### Plan
 ```yaml
 - name: Create plan
-  uses: AlexChesters/software-factory/actions/plan@main
+  uses: AlexChesters/software-factory/actions/plan@v0
   with:
     github-token: ${{ ??? }} # GitHub token issued by a GitHub app
     model: claude-sonnet-5-5 # optional, skips TypeSafe model selection
@@ -116,7 +116,7 @@ Execute and Revise optionally accept `allowed-bash-commands`: one bash command p
 ##### Execute
 ```yaml
 - name: Execute plan
-  uses: AlexChesters/software-factory/actions/execute@main
+  uses: AlexChesters/software-factory/actions/execute@v0
   with:
     github-token: ${{ ??? }} # GitHub token issued by a GitHub app
     model: claude-sonnet-5-5 # optional, skips TypeSafe model selection
@@ -136,7 +136,7 @@ The pull request's base commit must contain an `AGENTS.md` file at the repositor
 
 ```yaml
 - name: Review change
-  uses: AlexChesters/software-factory/actions/review@main
+  uses: AlexChesters/software-factory/actions/review@v0
   with:
     github-token: ${{ ??? }} # GitHub token issued by a GitHub app
     model: claude-sonnet-5-5 # optional, skips TypeSafe model selection
@@ -159,7 +159,7 @@ must be able to read the pull request's review comments and push to its source b
     ref: ${{ github.event.pull_request.head.sha }}
     persist-credentials: false
 - name: Revise pull request
-  uses: AlexChesters/software-factory/actions/revise@main
+  uses: AlexChesters/software-factory/actions/revise@v0
   with:
     github-token: ${{ steps.factory-app.outputs.token }} # GitHub App installation token
     model: claude-sonnet-5-5 # optional, skips TypeSafe model selection
