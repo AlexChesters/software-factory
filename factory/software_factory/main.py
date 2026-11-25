@@ -12,12 +12,11 @@ from software_factory.prompts import get_prompt
 READ_TOOLS = ["Read", "Grep", "Glob"]
 WRITE_TOOLS = [*READ_TOOLS, "Write", "Bash"]
 
-# tuple of (tools, allowed_tools)
 TOOL_MODES = {
-    "plan": (READ_TOOLS, []),
-    "review": (READ_TOOLS, []),
-    "execute": (WRITE_TOOLS, []),
-    "revise": (WRITE_TOOLS, []),
+    "plan": READ_TOOLS,
+    "review": READ_TOOLS,
+    "execute": WRITE_TOOLS,
+    "revise": WRITE_TOOLS,
 }
 
 async def main(
@@ -38,13 +37,13 @@ async def main(
 
     print(f"Model choice {model_choice.model_name} ({model_choice.effort}) for {mode} mode")
 
-    tools, allowed_tools = TOOL_MODES[mode]
+    tools = TOOL_MODES[mode]
     extra_bash_rules = [f"Bash({command})" for command in allowed_bash_commands or []]
     options = ClaudeAgentOptions(
         cwd=repo_dir,
         extra_args={"restricted": None},
         tools=tools,
-        allowed_tools=[*allowed_tools, *extra_bash_rules],
+        allowed_tools=extra_bash_rules,
         model=model_choice.model_name,
         effort=model_choice.effort,
         system_prompt={"type": "preset", "preset": "claude_code", "append": prompt},
