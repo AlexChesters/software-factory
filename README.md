@@ -100,6 +100,9 @@ Every station accepts the following optional inputs:
 
 An `effort` cannot be specified without a `model`. Claude validates the model and effort combination.
 
+Execute and Revise optionally accept `allowed-bash-commands`: one bash command per line. Each line becomes a
+`Bash(<command>)` allow rule. Plan and Review stay read-only. The list is not exclusive.
+
 ##### Plan
 ```yaml
 - name: Create plan
@@ -118,6 +121,10 @@ An `effort` cannot be specified without a `model`. Claude validates the model an
     github-token: ${{ ??? }} # GitHub token issued by a GitHub app
     model: claude-sonnet-5-5 # optional, skips TypeSafe model selection
     effort: medium # optional, requires model, defaults to medium
+    allowed-bash-commands: |
+      npm t
+      npm test
+      npm run build
 ```
 
 ##### Review
@@ -157,6 +164,10 @@ must be able to read the pull request's review comments and push to its source b
     github-token: ${{ steps.factory-app.outputs.token }} # GitHub App installation token
     model: claude-sonnet-5-5 # optional, skips TypeSafe model selection
     effort: medium # optional, requires model, defaults to medium
+    allowed-bash-commands: |
+      npm t
+      npm test
+      npm run build
 ```
 
 ### Codex and Claude Code

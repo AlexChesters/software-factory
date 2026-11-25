@@ -13,7 +13,7 @@ defaults:
     shell: bash
 
 jobs:
-  execute:
+  revise:
     if: >-
       github.event.review.state == 'changes_requested' &&
       github.event.review.author_association == 'OWNER'
@@ -26,6 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
       - name: Mint publishing token
         id: factory-app
