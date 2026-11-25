@@ -9,10 +9,14 @@ from software_factory.models import DEFAULT_EFFORT, ModelChoice, get_model_choic
 from software_factory.outputs import write_output
 from software_factory.prompts import get_prompt
 
+READ_TOOLS = ["Read", "Grep", "Glob"]
+WRITE_TOOLS = ["Read", "Grep", "Glob", "Write", "Bash(npm test)", "Bash(npm t)", "Bash(npm run lint)", "Bash(npm run *)"]
+
 TOOL_MODES = {
-    "plan": ["Read", "Grep", "Glob"],
-    "review": ["Read", "Grep", "Glob"],
-    "execute": ["Read", "Grep", "Glob", "Write", "Bash(npm test)", "Bash(npm t)", "Bash(npm run lint)", "Bash(npm run *)"]
+    "plan": READ_TOOLS,
+    "review": READ_TOOLS,
+    "execute": WRITE_TOOLS,
+    "revise": WRITE_TOOLS
 }
 
 async def main(
