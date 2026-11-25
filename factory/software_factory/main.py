@@ -10,13 +10,15 @@ from software_factory.outputs import write_output
 from software_factory.prompts import get_prompt
 
 READ_TOOLS = ["Read", "Grep", "Glob"]
-WRITE_TOOLS = ["Read", "Grep", "Glob", "Write", "Bash(npm test)", "Bash(npm t)", "Bash(npm run lint)", "Bash(npm run *)"]
+WRITE_TOOLS = [*READ_TOOLS, "Write", "Bash"]
+BASH_RULES = ["Bash(npm test)", "Bash(npm t)", "Bash(npm run lint)", "Bash(npm run *)"]
 
+# tuple of (tools, allowed_tools)
 TOOL_MODES = {
-    "plan": READ_TOOLS,
-    "review": READ_TOOLS,
-    "execute": WRITE_TOOLS,
-    "revise": WRITE_TOOLS
+    "plan": (READ_TOOLS, []),
+    "review": (READ_TOOLS, []),
+    "execute": (WRITE_TOOLS, BASH_RULES),
+    "revise": (WRITE_TOOLS, BASH_RULES),
 }
 
 async def main(
@@ -32,10 +34,12 @@ async def main(
 
     print(f"Model choice {model_choice.model_name} ({model_choice.effort}) for {mode} mode")
 
+    tools, allowed_tools = TOOL_MODES[mode]
     options = ClaudeAgentOptions(
         cwd=repo_dir,
         extra_args={"restricted": None},
-        tools=TOOL_MODES[mode],
+        tools=tools,
+        allowed_tools=allowed_tools,
         model=model_choice.model_name,
         effort=model_choice.effort,
         system_prompt={"type": "preset", "preset": "claude_code", "append": prompt},
