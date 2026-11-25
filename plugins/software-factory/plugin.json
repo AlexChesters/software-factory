@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "software-factory",
+  "version": "0.1.0",
+  "description": "Plan, execute, and review changes with Software Factory.",
+  "author": {
+    "name": "Alex Chesters"
+  }
+}

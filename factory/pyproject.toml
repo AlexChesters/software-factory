@@ -1,0 +1,14 @@
+[project]
+name = "software_factory"
+version = "0.1.0"
+description = "Alex's Software Factory"
+requires-python = ">=3.14"
+dependencies = [
+    "claude-agent-sdk>=0.2.184",
+    "typesafe-sdk>=0.7.5",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.5",
+]

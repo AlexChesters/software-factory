@@ -1,0 +1,65 @@
+name: "Alex's Software Factory- Review"
+description: Review a change
+
+inputs:
+  github-token:
+    description: GitHub token used to read the plan and create a pull request
+    required: true
+  model:
+    description: Explicit Claude model to use. When set, TypeSafe is not used and no TypeSafe API key is needed.
+    required: false
+    default: ""
+  effort:
+    description: Effort level. Requires model; defaults to medium when a model is set.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+    - name: Install python
+      shell: bash
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        uv python install
+    - name: Prepare review inputs
+      shell: bash
+      run: |
+        cd "$GITHUB_WORKSPACE"
+        git diff --no-ext-diff --no-textconv "${{ github.event.pull_request.base.sha }}...HEAD" > "pr.diff"
+        git show "${{ github.event.pull_request.base.sha }}:AGENTS.md" > AGENTS.md
+    - name: Mint GitHub OIDC token
+      id: oidc
+      shell: bash
+      run: |
+        token=$(curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" \
+          | jq -er .value)
+        printf '::add-mask::%s\n' "$token"
+        printf 'token=%s\n' "$token" >> "$GITHUB_OUTPUT"
+    - name: Run Claude
+      shell: bash
+      env:
+        ANTHROPIC_IDENTITY_TOKEN: ${{ steps.oidc.outputs.token }}
+        MODEL: ${{ inputs.model }}
+        EFFORT: ${{ inputs.effort }}
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        args=()
+        if [ -n "$MODEL" ]; then args+=(--model "$MODEL"); fi
+        if [ -n "$EFFORT" ]; then args+=(--effort "$EFFORT"); fi
+        uv run python -m software_factory.main --mode review --repo-dir "$GITHUB_WORKSPACE" "${args[@]}" < $GITHUB_WORKSPACE/pr.diff
+    - name: Post review
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        {
+          echo "## Reviewer agent"
+          echo
+          cat "outputs/output.md"
+        } > "comment.md"
+        gh pr comment "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --body-file "comment.md"

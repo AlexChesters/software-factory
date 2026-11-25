@@ -1,0 +1,70 @@
+name: "Alex's Software Factory- Plan"
+description: Plan a change
+
+inputs:
+  github-token:
+    description: GitHub token used to write the plan to the issue
+    required: true
+  model:
+    description: Explicit Claude model to use. When set, TypeSafe is not used and no TypeSafe API key is needed.
+    required: false
+    default: ""
+  effort:
+    description: Effort level. Requires model; defaults to medium when a model is set.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+    - name: Install python
+      shell: bash
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        uv python install
+    - name: Prepare prompt
+      shell: bash
+      env:
+        ISSUE_TITLE: ${{ github.event.issue.title }}
+        ISSUE_BODY: ${{ github.event.issue.body }}
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        printf 'Title: %s\n\n%s\n' "$ISSUE_TITLE" "$ISSUE_BODY" > task.md
+    - name: Mint GitHub OIDC token
+      id: oidc
+      shell: bash
+      run: |
+        token=$(curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" \
+          | jq -er .value)
+        printf '::add-mask::%s\n' "$token"
+        printf 'token=%s\n' "$token" >> "$GITHUB_OUTPUT"
+    - name: Run Claude
+      shell: bash
+      env:
+        ANTHROPIC_IDENTITY_TOKEN: ${{ steps.oidc.outputs.token }}
+        MODEL: ${{ inputs.model }}
+        EFFORT: ${{ inputs.effort }}
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        args=()
+        if [ -n "$MODEL" ]; then args+=(--model "$MODEL"); fi
+        if [ -n "$EFFORT" ]; then args+=(--effort "$EFFORT"); fi
+        uv run python -m software_factory.main --mode plan --repo-dir "$GITHUB_WORKSPACE" "${args[@]}" < task.md
+    - name: Post review
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        {
+          echo "## Proposed plan"
+          echo
+          cat outputs/output.md
+          echo
+          echo "---"
+          echo "Comment \`/approve\` to send this plan to the execution station."
+        } > comment.md
+        gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body-file comment.md

@@ -1,0 +1,15 @@
+{
+  "name": "alexchesters",
+  "owner": {
+    "name": "Alex Chesters"
+  },
+  "metadata": {
+    "description": "Software Factory plugins for planning, execution, and review."
+  },
+  "plugins": [
+    {
+      "name": "software-factory",
+      "source": "./plugins/software-factory"
+    }
+  ]
+}
