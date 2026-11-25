@@ -6,8 +6,9 @@ inputs:
     description: Installation token from a GitHub App that can push to the pull request branch
     required: true
   allowed-bash-commands:
-    description: Newline-separated bash commands Claude may run, for example npm test. Each line becomes a Bash(<command>) allow rule.
-    required: true
+    description: Optional newline-separated bash commands Claude may run, for example npm test. Each line becomes a Bash(<command>) allow rule.
+    required: false
+    default: ""
   model:
     description: Explicit Claude model to use. When set, TypeSafe is not used and no TypeSafe API key is needed.
     required: false
