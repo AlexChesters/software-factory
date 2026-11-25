@@ -11,14 +11,13 @@ from software_factory.prompts import get_prompt
 
 READ_TOOLS = ["Read", "Grep", "Glob"]
 WRITE_TOOLS = [*READ_TOOLS, "Write", "Bash"]
-BASH_RULES = ["Bash(npm test)", "Bash(npm t)", "Bash(npm run lint)", "Bash(npm run *)"]
 
 # tuple of (tools, allowed_tools)
 TOOL_MODES = {
     "plan": (READ_TOOLS, []),
     "review": (READ_TOOLS, []),
-    "execute": (WRITE_TOOLS, BASH_RULES),
-    "revise": (WRITE_TOOLS, BASH_RULES),
+    "execute": (WRITE_TOOLS, []),
+    "revise": (WRITE_TOOLS, []),
 }
 
 async def main(
