@@ -35,6 +35,12 @@ This PR may or may not have been written by the factory.
 The review station will comment on the pull request with its findings, but it will not explicitly approve/request
 changes.
 
+### Review -> Revised PR
+
+The [`revise`](./actions/revise/action.yml) action addresses a submitted pull request review that requests
+changes. It uses the review summary and inline comments to revise the code, then commits and pushes any
+changes to the branch of the existing pull request.
+
 ## Usage
 
 ### GitHub Actions
@@ -46,7 +52,7 @@ requests to see how the factory can be used.
 #### Dependencies
 | Dependency    | Used for      |
 | ------------- | ------------- |
-| Claude Platform API  | Primary LLM for creating plans, executing changes and reviewing changes  |
+| Claude Platform API  | Primary LLM for creating plans, implementing changes, reviewing pull requests, and revising changes  |
 | TypeSafe API  | System One model decision for which model is used for the Claude Platform (only used when no model is specified) |
 
 #### Permissions and credentials
@@ -130,6 +136,28 @@ The pull request's base commit must contain an `AGENTS.md` file at the repositor
     effort: medium # optional, requires model, defaults to medium
 ```
 
+##### Revise
+
+Run the revise action on `pull_request_review` with `types: [submitted]`. Gate the job on
+`github.event.review.state == 'changes_requested'` and check `github.event.review.author_association` to
+restrict execution to trusted reviewers. The factory's workflow accepts reviews from the repository owner.
+
+Check out the pull request's exact head commit before running the action. The GitHub App installation token
+must be able to read the pull request's review comments and push to its source branch.
+
+```yaml
+- uses: actions/checkout@v7
+  with:
+    repository: ${{ github.event.pull_request.head.repo.full_name }}
+    ref: ${{ github.event.pull_request.head.sha }}
+    persist-credentials: false
+- name: Revise pull request
+  uses: AlexChesters/software-factory/actions/revise@main
+  with:
+    github-token: ${{ steps.factory-app.outputs.token }} # GitHub App installation token
+    model: claude-sonnet-5-5 # optional, skips TypeSafe model selection
+    effort: medium # optional, requires model, defaults to medium
+```
 
 ### Codex and Claude Code
 
