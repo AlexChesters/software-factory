@@ -1,0 +1,42 @@
+name: "Factory: revise"
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  id-token: write
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  execute:
+    if: >-
+      github.event.review.state == 'changes_requested' &&
+      github.event.review.author_association == 'OWNER'
+    runs-on: ubuntu-26.04
+    env:
+      ANTHROPIC_FEDERATION_RULE_ID: ${{ secrets.ANTHROPIC_FEDERATION_RULE_ID }}
+      ANTHROPIC_ORGANIZATION_ID: ${{ secrets.ANTHROPIC_ORGANIZATION_ID }}
+      ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ secrets.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+      TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Mint publishing token
+        id: factory-app
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.SOFTWARE_FACTORY_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SOFTWARE_FACTORY_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: read
+      - name: Revise pull request
+        uses: AlexChesters/software-factory/actions/revise@main
+        with:
+          github-token: ${{ steps.factory-app.outputs.token }}
