@@ -1,0 +1,109 @@
+name: "Alex's Software Factory- Revise"
+description: Revise a change
+
+inputs:
+  github-token:
+    description: Installation token from a GitHub App that can push to the pull request branch
+    required: true
+  model:
+    description: Explicit Claude model to use. When set, TypeSafe is not used and no TypeSafe API key is needed.
+    required: false
+    default: ""
+  effort:
+    description: Effort level. Requires model; defaults to medium when a model is set.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+    - name: Install python
+      shell: bash
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        uv python install
+    - name: Fetch the requested changes
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        pr_number=$(jq -er '.pull_request.number' "$GITHUB_EVENT_PATH")
+        review_id=$(jq -er '.review.id' "$GITHUB_EVENT_PATH")
+
+        {
+          jq -r '"# Requested changes for PR #\(.pull_request.number)\n\nReview: \(.review.html_url)\nReviewed commit: \(.review.commit_id)\n\n## Review summary\n\(.review.body // "")"' \
+            "$GITHUB_EVENT_PATH"
+
+          printf '\n## Inline comments\n'
+          gh api --paginate --slurp \
+            "repos/${{ github.repository }}/pulls/$pr_number/reviews/$review_id/comments" |
+            jq -r '.[][] |
+              "### \(.path) — \(.side // "file"), line \(.line // .original_line // "n/a")\n\(.html_url)\n\n\(.body)\n\n\(.diff_hunk // "")\n"'
+        } > "requested-changes.md"
+    - name: Prepare prompt
+      shell: bash
+      env:
+        ISSUE_NUMBER: ${{ github.event.issue.number }}
+        ISSUE_TITLE: ${{ github.event.issue.title }}
+        ISSUE_BODY: ${{ github.event.issue.body }}
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        printf 'The task (issue #%s):\nTitle: %s\n\n%s\n\nThe approved plan:\n' "$ISSUE_NUMBER" "$ISSUE_TITLE" "$ISSUE_BODY" > task.md
+        cat requested-changes.md >> task.md
+    - name: Mint GitHub OIDC token
+      id: oidc
+      shell: bash
+      run: |
+        token=$(curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" \
+          | jq -er .value)
+        printf '::add-mask::%s\n' "$token"
+        printf 'token=%s\n' "$token" >> "$GITHUB_OUTPUT"
+    - name: Run Claude
+      shell: bash
+      env:
+        ANTHROPIC_IDENTITY_TOKEN: ${{ steps.oidc.outputs.token }}
+        MODEL: ${{ inputs.model }}
+        EFFORT: ${{ inputs.effort }}
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        args=()
+        if [ -n "$MODEL" ]; then args+=(--model "$MODEL"); fi
+        if [ -n "$EFFORT" ]; then args+=(--effort "$EFFORT"); fi
+        uv run python -m software_factory.main --mode revise --repo-dir "$GITHUB_WORKSPACE" "${args[@]}" < task.md
+    - name: Commit and push changes
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      run: |
+        if [[ -z "$PR_HEAD_REPO" || -z "$PR_HEAD_REF" || -z "$PR_HEAD_SHA" ]]; then
+          echo "::error::Could not determine the source branch of the invoking pull request."
+          exit 1
+        fi
+        if [[ "$(git rev-parse HEAD)" != "$PR_HEAD_SHA" ]]; then
+          echo "::error::Check out the pull request head SHA before running Revise."
+          exit 1
+        fi
+
+        git add -- .  ':!requested-changes.md' ':!factory/task.md' ':!factory/outputs/output.md'
+        if git diff --cached --quiet; then
+          echo "No changes to commit."
+          exit 0
+        fi
+
+        git config user.name "factory-bot"
+        git config user.email "factory-bot@users.noreply.github.com"
+        git commit -m "Factory: Address review feedback (#$PR_NUMBER)"
+
+        head_ref="refs/heads/$PR_HEAD_REF"
+        gh auth setup-git
+        git -c "http.${GITHUB_SERVER_URL}/.extraheader=" push \
+          --force-with-lease="$head_ref:$PR_HEAD_SHA" \
+          "$GITHUB_SERVER_URL/$PR_HEAD_REPO.git" "HEAD:$head_ref"
