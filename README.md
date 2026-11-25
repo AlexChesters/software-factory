@@ -100,8 +100,8 @@ Every station accepts the following optional inputs:
 
 An `effort` cannot be specified without a `model`. Claude validates the model and effort combination.
 
-Execute and Revise optionally accept `allowed-bash-commands`: one bash command per line. Each line becomes a
-`Bash(<command>)` allow rule. Plan and Review stay read-only. The list is not exclusive.
+The Execute and Revise stations accept an optional input, `allowed-bash-commands`. This input is one bash
+command per line. Each line becomes a `Bash(<command>)` allow rule for the Claude Code SDK.
 
 ##### Plan
 ```yaml
