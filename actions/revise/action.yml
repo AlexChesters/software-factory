@@ -5,6 +5,9 @@ inputs:
   github-token:
     description: Installation token from a GitHub App that can push to the pull request branch
     required: true
+  allowed-bash-commands:
+    description: Newline-separated bash commands Claude may run, for example npm test. Each line becomes a Bash(<command>) allow rule.
+    required: true
   model:
     description: Explicit Claude model to use. When set, TypeSafe is not used and no TypeSafe API key is needed.
     required: false
@@ -68,11 +71,16 @@ runs:
         ANTHROPIC_IDENTITY_TOKEN: ${{ steps.oidc.outputs.token }}
         MODEL: ${{ inputs.model }}
         EFFORT: ${{ inputs.effort }}
+        ALLOWED_BASH_COMMANDS: ${{ inputs.allowed-bash-commands }}
       run: |
         cd "$GITHUB_ACTION_PATH/../../factory"
         args=()
         if [ -n "$MODEL" ]; then args+=(--model "$MODEL"); fi
         if [ -n "$EFFORT" ]; then args+=(--effort "$EFFORT"); fi
+        while IFS= read -r cmd; do
+          cmd="${cmd#"${cmd%%[![:space:]]*}"}"; cmd="${cmd%"${cmd##*[![:space:]]}"}"
+          [ -n "$cmd" ] && args+=(--allowed-bash-command "$cmd")
+        done <<< "$ALLOWED_BASH_COMMANDS"
         uv run python -m software_factory.main --mode revise --repo-dir "$GITHUB_WORKSPACE" "${args[@]}" < task.md
     - name: Commit and push changes
       shell: bash
