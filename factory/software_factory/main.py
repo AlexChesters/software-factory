@@ -17,6 +17,7 @@ TOOL_MODES = {
     "review": READ_TOOLS,
     "execute": WRITE_TOOLS,
     "revise": WRITE_TOOLS,
+    "repair": WRITE_TOOLS
 }
 
 async def main(
@@ -61,7 +62,7 @@ async def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=["plan", "execute", "review", "revise"], required=True)
+    parser.add_argument("--mode", choices=["plan", "execute", "review", "revise", "repair"], required=True)
     parser.add_argument("--repo-dir", type=Path, default=Path.cwd(), help="Repository for Claude to work in")
     parser.add_argument("--model", help="Claude model to use instead of TypeSafe model selection")
     parser.add_argument("--effort", help=f"Effort level for an explicit model (default: {DEFAULT_EFFORT})")

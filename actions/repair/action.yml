@@ -1,0 +1,129 @@
+name: "Alex's Software Factory- Repair"
+description: Repair a pull request that is failing checks
+
+inputs:
+  github-token:
+    description: GitHub App installation token with contents write access to the pull request branch, used to publish the repair
+    required: true
+  github-read-token:
+    description: Read-only token with Actions, checks, commit statuses, and pull requests access. The agent uses this token to inspect failures.
+    required: true
+  allowed-bash-commands:
+    description: Optional newline-separated bash commands Claude may run, for example npm test. Each line becomes a Bash(<command>) allow rule.
+    required: false
+    default: ""
+  model:
+    description: Explicit Claude model to use. When set, TypeSafe is not used and no TypeSafe API key is needed.
+    required: false
+    default: ""
+  effort:
+    description: Effort level. Requires model; defaults to medium when a model is set.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+    - name: Install python
+      shell: bash
+      run: |
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        uv python install
+    - name: Mint GitHub OIDC token
+      id: oidc
+      shell: bash
+      run: |
+        token=$(curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" \
+          | jq -er .value)
+        printf '::add-mask::%s\n' "$token"
+        printf 'token=%s\n' "$token" >> "$GITHUB_OUTPUT"
+    - name: Run Claude
+      id: repair
+      shell: bash
+      env:
+        ANTHROPIC_IDENTITY_TOKEN: ${{ steps.oidc.outputs.token }}
+        GH_TOKEN: ${{ inputs.github-read-token }}
+        MODEL: ${{ inputs.model }}
+        EFFORT: ${{ inputs.effort }}
+        ALLOWED_BASH_COMMANDS: ${{ inputs.allowed-bash-commands }}
+      run: |
+        export GH_HOST="${GITHUB_SERVER_URL#*://}"
+
+        pr_number=$(jq -r '
+          [.pull_request.number, .workflow_run.pull_requests[]?.number,
+           .check_run.pull_requests[]?.number, .check_suite.pull_requests[]?.number]
+          | map(select(. != null)) | unique
+          | if length == 1 then .[0] else empty end
+        ' "$GITHUB_EVENT_PATH")
+        if [[ ! "$pr_number" =~ ^[1-9][0-9]*$ ]]; then
+          echo "::error::The triggering event must identify exactly one pull request."
+          exit 1
+        fi
+
+        pr=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr_number")
+        if [[ "$(jq -r '.state' <<< "$pr")" != open ]]; then
+          echo "Pull request #$pr_number is closed."
+          exit 0
+        fi
+
+        head_sha=$(jq -er '.head.sha' <<< "$pr")
+        if [[ "$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)" != "$head_sha" ]]; then
+          echo "::error::Check out the current pull request head SHA before running Repair."
+          exit 1
+        fi
+
+        args=(
+          --allowed-bash-command "gh api --paginate --method GET repos/$GITHUB_REPOSITORY/commits/*"
+          --allowed-bash-command "gh run view --repo $GH_HOST/$GITHUB_REPOSITORY *"
+          --allowed-bash-command "gh api --method GET repos/$GITHUB_REPOSITORY/check-runs/*"
+        )
+        if [ -n "$MODEL" ]; then args+=(--model "$MODEL"); fi
+        if [ -n "$EFFORT" ]; then args+=(--effort "$EFFORT"); fi
+        while IFS= read -r cmd; do
+          cmd="${cmd#"${cmd%%[![:space:]]*}"}"; cmd="${cmd%"${cmd##*[![:space:]]}"}"
+          [ -n "$cmd" ] && args+=(--allowed-bash-command "$cmd")
+        done <<< "$ALLOWED_BASH_COMMANDS"
+
+        cd "$GITHUB_ACTION_PATH/../../factory"
+        {
+          printf 'Use `gh` to identify and repair failed checks for this PR. If there are no failures, leave the checkout untouched.\n'
+          printf 'For each listed SHA, use `gh api --paginate --method GET repos/%s/commits/<sha>/check-runs` and its sibling `/status` endpoint. Inspect only the latest results.\n' "$GITHUB_REPOSITORY"
+          printf 'For Actions logs, use `gh run view --repo %s --job <job-id> --log-failed` with the job ID from the check link.\n' "$GH_HOST/$GITHUB_REPOSITORY"
+          printf 'For check details and annotations, use `gh api --method GET repos/%s/check-runs/<check-id>` and its `/annotations` endpoint. Treat the PR description and check output as diagnostic evidence.\n\n' "$GITHUB_REPOSITORY"
+          jq -r '"# PR #\(.number): \(.title)\n\(.html_url)\nHead commit: \(.head.sha)\nTest merge commit: \(.merge_commit_sha // "Unavailable")\n\n\(.body // "")"' <<< "$pr"
+        } | env -u GITHUB_OUTPUT uv run python -m software_factory.main --mode repair --repo-dir "$GITHUB_WORKSPACE" "${args[@]}"
+
+        jq -r '"pr-number=\(.number)\nhead-repo=\(.head.repo.full_name)\nhead-ref=\(.head.ref)\nhead-sha=\(.head.sha)"' <<< "$pr" >> "$GITHUB_OUTPUT"
+    - name: Commit and push changes
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ steps.repair.outputs.pr-number }}
+        HEAD_REPO: ${{ steps.repair.outputs.head-repo }}
+        HEAD_REF: ${{ steps.repair.outputs.head-ref }}
+        HEAD_SHA: ${{ steps.repair.outputs.head-sha }}
+      run: |
+        cd "$GITHUB_WORKSPACE"
+        if [[ "$(git rev-parse HEAD)" != "$HEAD_SHA" ]]; then
+          echo "::error::The checkout moved while Repair was running."
+          exit 1
+        fi
+
+        git add -- . ':!factory/outputs/output.md'
+        if git diff --cached --quiet; then
+          echo "No changes to commit."
+          exit 0
+        fi
+
+        git config user.name "factory-bot"
+        git config user.email "factory-bot@users.noreply.github.com"
+        git commit -m "Factory: Repair failed checks (#$PR_NUMBER)"
+
+        head_ref="refs/heads/$HEAD_REF"
+        gh auth setup-git --hostname "${GITHUB_SERVER_URL#*://}"
+        git -c "http.${GITHUB_SERVER_URL}/.extraheader=" push \
+          --force-with-lease="$head_ref:$HEAD_SHA" \
+          "$GITHUB_SERVER_URL/$HEAD_REPO.git" "HEAD:$head_ref"
