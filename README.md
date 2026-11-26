@@ -172,7 +172,7 @@ must be able to read the pull request's review comments and push to its source b
 
 ### Codex and Claude Code
 
-Install the Software Factory plugin to get all three stations in your local harness.
+Install the Software Factory plugin to use its skills in your local harness.
 
 ```sh
 # Codex
@@ -191,5 +191,8 @@ To install from a local Software Factory checkout, run the same commands from it
 | Write a plan | `$software-factory:plan task.md` | `/software-factory:plan task.md` |
 | Implement an approved plan | `$software-factory:execute plan.md` | `/software-factory:execute plan.md` |
 | Review changes against a base ref | `$software-factory:review main` | `/software-factory:review main` |
+| Repair failed PR checks | `$software-factory:repair 123` | `/software-factory:repair 123` |
 
 Run the skills in the checkout you want to work on. Planning writes `plan.md`. Review or edit that file before explicitly running the execution skill. Execution leaves the changes in your working tree, and review reports its findings in chat.
+
+Repair accepts a PR number, URL, or supplied failure details. Omit the PR to use the current branch's PR. Repair leaves fixes in your working tree and reports which checks it could verify locally.
